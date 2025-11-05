@@ -10,3 +10,18 @@ details pre {
     padding: 1rem;
     margin-top: 0.5rem;
 }
+
+details.position-relative {
+    position: relative;
+}
+
+.btn-copy-syntax {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+}
+
+.tag-badge-clickable {
+    cursor: pointer;
+}

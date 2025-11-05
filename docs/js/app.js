@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         rulesContainer.innerHTML = rules.map(rule => {
             const tags = Array.isArray(rule.tags) ? rule.tags : (rule.tags ? [rule.tags] : []);
-            const tagBadges = tags.map(tag => `<span class="badge bg-secondary me-1">${tag}</span>`).join(' ');
+            const tagBadges = tags.map(tag => `<span class="badge bg-secondary me-1 tag-badge-clickable">${tag}</span>`).join(' ');
 
             return `
             <div class="col-md-6 col-lg-4">
@@ -64,8 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="mb-3">
                                 ${tagBadges}
                             </div>
-                            <details>
+                            <details class="position-relative">
                                 <summary>Show Syntax</summary>
+                                <button class="btn btn-sm btn-outline-secondary btn-copy-syntax">Copy</button>
                                 <pre><code>${rule.syntax || ''}</code></pre>
                             </details>
                         </div>
@@ -76,17 +77,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
     }
 
-    searchBar.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
+    function filterAndRender() {
+        const query = searchBar.value.toLowerCase();
         
         const filteredRules = allRules.filter(rule => {
             const titleMatch = (rule.title || '').toLowerCase().includes(query);
+            const descMatch = (rule.description || '').toLowerCase().includes(query);
+            const authorMatch = (rule.author || '').toLowerCase().includes(query);
+            const syntaxMatch = (rule.syntax || '').toLowerCase().includes(query);
             const tags = Array.isArray(rule.tags) ? rule.tags : (rule.tags ? [rule.tags] : []);
             const tagMatch = tags.some(tag => tag.toLowerCase().includes(query));
-            return titleMatch || tagMatch;
+            
+            return titleMatch || descMatch || authorMatch || syntaxMatch || tagMatch;
         });
         
         renderRules(filteredRules);
+    }
+
+    searchBar.addEventListener('input', filterAndRender);
+
+    rulesContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('tag-badge-clickable')) {
+            e.preventDefault();
+            searchBar.value = e.target.innerText;
+            searchBar.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        if (e.target.classList.contains('btn-copy-syntax')) {
+            e.preventDefault();
+            const button = e.target;
+            const details = button.closest('details');
+            const code = details.querySelector('pre code');
+            
+            if (code) {
+                navigator.clipboard.writeText(code.innerText).then(() => {
+                    button.innerText = 'Copied!';
+                    setTimeout(() => {
+                        button.innerText = 'Copy';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                });
+            }
+        }
     });
 
     fetchRules();
