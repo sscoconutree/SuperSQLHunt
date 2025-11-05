@@ -1,0 +1,9 @@
+id: 96e08c11-6b7d-4217-bec0-d7ad731ac5b2
+title: "another test"
+description: test again
+author: testest
+tags:
+  - testing
+syntax: |
+  testing=only
+source: 
