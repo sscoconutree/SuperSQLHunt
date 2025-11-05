@@ -3,8 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchBar = document.getElementById('search-bar');
     const loadingIndicator = document.getElementById('loading-indicator');
     
-    const rulesJsonUrl = 'rules.json';
+    const ruleTemplate = document.getElementById('rule-template');
+
+    if (!ruleTemplate) {
+        console.error('Error: The #rule-template element was not found in the DOM.');
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        rulesContainer.innerHTML = '<div class="col-12"><div class="alert alert-danger" role="alert"><strong>Developer Error:</strong> The <code>#rule-template</code> was not found. Cannot render rules.</div></div>';
+        return;
+    }
     
+    const rulesJsonUrl = 'rules.json';
     let allRules = [];
 
     async function fetchRules() {
@@ -34,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (error) {
             console.error('Failed to fetch rules:', error);
-            const errorMessage = `<strong>An error occurred while loading rules:</strong> ${error.message} Check the console (F12) for more details.`;
+            const errorMessage = `<strong>An error occurred while loading rules:</strong> ${error.message}`;
             rulesContainer.innerHTML = `<div class="col-12"><div class="alert alert-danger" role="alert">${errorMessage}</div></div>`;
         } finally {
             if (loadingIndicator) {
@@ -44,37 +52,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderRules(rules) {
+        const children = Array.from(rulesContainer.children);
+        children.forEach(child => {
+            if (child.id !== 'rule-template') {
+                rulesContainer.removeChild(child);
+            }
+        });
+
         if (rules.length === 0) {
-            rulesContainer.innerHTML = '<div class="col-12"><p class="text-center text-muted">No rules found matching your criteria.</p></div>';
+            const noRules = document.createElement('div');
+            noRules.className = 'col-12';
+            noRules.innerHTML = '<p class="text-center text-muted">No rules found matching your criteria.</p>';
+            rulesContainer.appendChild(noRules);
             return;
         }
 
-        rulesContainer.innerHTML = rules.map(rule => {
-            const tags = Array.isArray(rule.tags) ? rule.tags : (rule.tags ? [rule.tags] : []);
-            const tagBadges = tags.map(tag => `<span class="badge bg-secondary me-1 tag-badge-clickable">${tag}</span>`).join(' ');
+        rules.forEach(rule => {
+            const card = ruleTemplate.cloneNode(true);
+            
+            card.id = '';
+            card.style.display = '';
 
-            return `
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">${rule.title || 'Untitled Rule'}</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">By: ${rule.author || 'Unknown'}</h6>
-                        <p class="card-text">${rule.description || ''}</p>
-                        <div class="mt-auto">
-                            <div class="mb-3">
-                                ${tagBadges}
-                            </div>
-                            <details class="position-relative">
-                                <summary>Show Syntax</summary>
-                                <button class="btn btn-sm btn-outline-secondary btn-copy-syntax">Copy</button>
-                                <pre><code>${rule.syntax || ''}</code></pre>
-                            </details>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            `;
-        }).join('');
+            card.querySelector('.card-title').textContent = rule.title || 'Untitled Rule';
+            card.querySelector('.card-subtitle').textContent = `By: ${rule.author || 'Unknown'}`;
+            card.querySelector('.card-text').textContent = rule.description || '';
+            card.querySelector('pre code').textContent = rule.syntax || '';
+
+            const tagsContainer = card.querySelector('.rule-tags-container');
+            tagsContainer.innerHTML = '';
+            
+            const tags = Array.isArray(rule.tags) ? rule.tags : (rule.tags ? [rule.tags] : []);
+            
+            if (tags.length > 0) {
+                tags.forEach(tagText => {
+                    const tagBadge = document.createElement('span');
+                    tagBadge.className = 'badge bg-secondary me-1 tag-badge-clickable';
+                    tagBadge.textContent = tagText;
+                    tagsContainer.appendChild(tagBadge);
+                });
+            }
+
+            rulesContainer.appendChild(card);
+        });
     }
 
     function filterAndRender() {
@@ -101,24 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             searchBar.value = e.target.innerText;
             searchBar.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        if (e.target.classList.contains('btn-copy-syntax')) {
-            e.preventDefault();
-            const button = e.target;
-            const details = button.closest('details');
-            const code = details.querySelector('pre code');
-            
-            if (code) {
-                navigator.clipboard.writeText(code.innerText).then(() => {
-                    button.innerText = 'Copied!';
-                    setTimeout(() => {
-                        button.innerText = 'Copy';
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Failed to copy text: ', err);
-                });
-            }
         }
     });
 
