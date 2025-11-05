@@ -1,0 +1,16 @@
+[
+  {
+    "id": "d2e8f1c0-a4b3-4f1e-9d2c-8a1b5c2d3e4f",
+    "title": "Detect Google ASN Block",
+    "description": "This rule detects traffic associated with Google's ASN, useful for identifying specific cloud-based activities.",
+    "author": "aj-tap",
+    "tags": [
+      "Google",
+      "ip",
+      "internetstormcast",
+      "cloud"
+    ],
+    "syntax": "rawData.ip.asname=='GOOGLE'\n",
+    "source": "internetstormcast"
+  }
+]
